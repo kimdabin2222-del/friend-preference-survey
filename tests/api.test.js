@@ -16,6 +16,13 @@ test('40 questions and authorized survey lifecycle',async()=>{
  assert.equal((await call('/me','PUT',{...body,answers:{q2:['invalid']}},a.token)).status,400);
  await call('/me','PUT',{...body,answers:{q1:'피자'},sharing:false},b.token);assert.equal((await call('/friends','GET',null,a.token)).data.profiles.length,0);
  assert.equal((await call('/me','GET',null,b.token)).data.profile.answers.q1,'피자');
+ assert.equal((await call('/me/group','POST',{room:'bad'},c.token)).status,400);
+ assert.equal((await call('/me/group','POST',{room},'wrong')).status,401);
+ const moved=await call('/me/group','POST',{room},c.token);
+ assert.equal(moved.status,200);assert.equal(moved.data.profile.answers.q1,'파스타');assert.equal(moved.data.profile.sharing,false);assert.equal(moved.data.room,room);
+ assert.equal((await call('/friends','GET',null,a.token)).data.profiles.length,0);
+ await call('/me','PUT',body,c.token);
+ assert.equal((await call('/friends','GET',null,a.token)).data.profiles.length,1);
  await call('/me','DELETE',null,b.token);assert.equal((await call('/me','GET',null,b.token)).status,401);
  }finally{await new Promise(r=>server.close(r));}
 });
